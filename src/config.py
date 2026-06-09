@@ -42,8 +42,8 @@ XBRL_TAGS: dict[str, list[str]] = {
     "act": ["AssetsCurrent"],
 
     "che": [
-        "CashAndCashEquivalentsAtCarryingValue",
         "CashCashEquivalentsAndShortTermInvestments",
+        "CashAndCashEquivalentsAtCarryingValue",
     ],
 
     "lct": ["LiabilitiesCurrent"],
@@ -195,8 +195,9 @@ XBRL_TAGS: dict[str, list[str]] = {
     ],
 
     "xsga": [
-        "GeneralAndAdministrativeExpense",
         "SellingGeneralAndAdministrativeExpense",
+        "OperatingExpenses", 
+        "GeneralAndAdministrativeExpense",
     ],
 
     "epspx": [

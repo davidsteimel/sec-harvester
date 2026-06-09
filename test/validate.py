@@ -1,11 +1,3 @@
-"""
-validate_compustat.py — Vergleich EDGAR-DB (facts-Tabelle) mit Compustat Quarterly CSV.
-
-Verwendung:
-    python src/validate_compustat.py
-    python src/validate_compustat.py --cik 0000320193
-"""
-
 import argparse
 import csv
 import math
@@ -15,10 +7,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import sqlite3
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Konfiguration
-# ─────────────────────────────────────────────────────────────────────────────
 
 TAG_TO_COMPUSTAT_COLUMN: dict[str, str] = {
     "at":     "CO_IFNDQ_ATQ",
@@ -68,11 +56,6 @@ COMPUSTAT_SCALE = 1_000_000.0
 REL_TOL = 0.01   
 ABS_TOL = 1_000_000.0  
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Hilfsfunktionen
-# ─────────────────────────────────────────────────────────────────────────────
-
 def normalize_cik(cik: str) -> str:
     return str(cik).strip().zfill(10)
 
@@ -94,10 +77,6 @@ def is_match(sec_val: float, compustat_val: float) -> bool:
         return True
     denom = max(abs(sec_val), abs(compustat_val), 1.0)
     return (diff / denom) <= REL_TOL
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Compustat-CSV laden
-# ─────────────────────────────────────────────────────────────────────────────
 
 def load_compustat(
     csv_path: Path,
@@ -135,12 +114,10 @@ def load_compustat(
                 print(f"\r  {row_num:,} Zeilen gelesen, {rows_matched} Treffer ...",
                       end="", file=sys.stderr, flush=True)
 
-            # Tür 1: Konsolidierung (Toleranter Check)
             consol = row.get("CO_IDESIND_CONSOL", "").strip()
             if consol and consol != "C":
                 continue
 
-            # Tür 2: Datum
             period_end = parse_date(row.get("CO_IDESIND_DATADATE", ""))
             if not period_end:
                 continue
@@ -149,7 +126,6 @@ def load_compustat(
             if year < min_year or year > max_year:
                 continue
 
-            # Tür 3: Name Matching
             compustat_name = row.get("COMPANY_CONM", "").strip()
             norm_name = normalize_name(compustat_name)
             
@@ -176,10 +152,6 @@ def load_compustat(
     print(f"\r  {rows_read:,} Zeilen gelesen, {rows_matched} Treffer.          ", file=sys.stderr)
     return facts
 
-# ─────────────────────────────────────────────────────────────────────────────
-# EDGAR-DB laden
-# ─────────────────────────────────────────────────────────────────────────────
-
 def load_edgar(
     db_path: Path,
     ciks: list[str],
@@ -194,7 +166,6 @@ def load_edgar(
     placeholders_cik = ",".join("?" for _ in ciks)
     placeholders_tag = ",".join("?" for _ in tags)
 
-    # 2. PERIOD_TYPE FIX (Q statt A für Quartalsvergleich)
     rows = con.execute(
         f"""
         SELECT cik, tag, period_end, value
@@ -211,10 +182,6 @@ def load_edgar(
     con.close()
 
     return {(row["cik"], row["period_end"], row["tag"]): row["value"] for row in rows}
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Vergleich
-# ─────────────────────────────────────────────────────────────────────────────
 
 def run_comparison(
     compustat_path: Path,
@@ -336,7 +303,6 @@ def run_comparison(
                     except (ValueError, KeyError):
                         pass
                         
-        # HIER IST DER FIX:
         mismatches.sort(key=lambda item: item[0], reverse=True)
         
         for _, row in mismatches[:10]:
@@ -347,9 +313,6 @@ def run_comparison(
             except (ValueError, KeyError):
                 pass
 
-# ─────────────────────────────────────────────────────────────────────────────
-# CLI
-# ─────────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Vergleicht EDGAR-DB mit Compustat Quarterly CSV.")
